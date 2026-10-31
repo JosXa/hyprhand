@@ -57,6 +57,8 @@ hyprhand windows [--all] | active-window | monitors | workspaces | cursor | keyb
 hyprhand focus-window W | close-window W | workspace N | move-window-workspace N --target W [--silent]
 hyprhand dispatch <hyprland-dispatcher> [args...]
 hyprhand cursors [list|start|stop|forget]
+hyprhand --agent me record start (--monitor NAME | --window W | --region x,y,w,h) [--out file.mp4]
+hyprhand --agent me record stop
 hyprhand doctor
 ```
 
@@ -76,7 +78,8 @@ hyprhand doctor
 - Real input briefly takes over the user's pointer and keyboard. Keep it short, and prefer element ids so most work stays semantic.
 - If an element answers `stale`, observe again.
 - Telegram Desktop exposes its composer and buttons but not its chat list. Use keyboard shortcuts such as `ctrl+0` for Saved Messages or the search field.
-- `HYPRHAND_CURSOR=0` disables the overlay, and `HYPRHAND_RESTORE=0` leaves the pointer and focus where the action ended.
+- `HYPRHAND_CURSOR=0` disables the overlay, and `HYPRHAND_RESTORE=0` leaves the pointer and focus where the action ended. `HYPRHAND_COLOR` overrides your cursor color, `HYPRHAND_JEV_MODEL` picks the Jev model (default `jev-latest`), and `HYPRHAND_DEBUG=1` prints overlay errors.
+- `record stop` returns the mp4 path, length, and size; recordings go to `~/Videos/hyprhand` unless `--out` is given and include every agent cursor.
 
 ## MCP
 
