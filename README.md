@@ -24,7 +24,7 @@ hyprhand picks the cheapest route that works and drops to the next one only when
 
 - `find "the Send button" --in telegram` returns the matching element, how it was found (`accessibility` or `vision`), and a confidence.
 - `--find` on `click`, `move`, `type`, and `scroll` acts on that match directly.
-- When a screenshot match scores below 0.9, hyprhand crops around it and asks Jev again on the zoomed image (`via: "vision, zoomed"`). This tells apart neighbors such as Discord's gift and GIF buttons.
+- On a screenshot, Jev looks twice, following TypeSafe's [vision guidance](https://docs.typesafe.ai). It first answers whether the control is visible and boxes it on the whole window. Then hyprhand crops three times that box, enlarges it, and asks again. The confidence comes from the zoomed look, so a control that is cut off or missing scores low instead of returning a wrong box. Images go up as multipart uploads at JPEG quality 90, and small windows are enlarged first. In Discord this places the gift and GIF buttons, the input box, and the server icons at 0.75–0.99 in about 0.8 s.
 - `check "the message was sent" --in W` asks Jev a yes/no question about the screenshot and the accessibility items. It answers `yes`, `no`, or `unsure` with a score in about 0.3 s, so agents can verify a step without reading screenshots themselves.
 - `wait-for "the upload finished" --in W` repeats that check every second until it holds, and fails after `--timeout` (30 s by default). It keeps polling while the window does not exist yet, so it also waits for an app to start.
 - `do "<goal>" --in W` loops: Jev picks one action (click an item, type allowed text, Enter, Escape, back, scroll, wait), hyprhand runs it, and Jev checks whether the goal is met. The run stops with a status of `done`, `unsure` (with the alternatives Jev hesitated between), `no_way_forward`, `stuck`, or `step_limit`. Each run is logged under `~/.cache/hyprhand/runs`.
@@ -137,7 +137,7 @@ Every command becomes a tool (`do`, `find`, `observe`, `click`, `open_app`, and 
 ## Known limits
 
 - Keyboard typing into Electron apps and some GTK4 dialogs can drop characters, mostly spaces and hyphens. Setting text through accessibility (`type --into eN`) is reliable where the app exposes the field.
-- Jev's matches on screenshots are less certain than on accessibility items and can land a few pixels off small icons, so check a vision hit before anything that sends or deletes.
+- Jev's matches on screenshots are slower than on accessibility items (two requests) and score lower on icons without text, so check a vision hit before anything that sends or deletes.
 - `do` can miss that a goal is done when the finished screen looks like the starting screen, such as "open a folder, then go back".
 
 ## Credits

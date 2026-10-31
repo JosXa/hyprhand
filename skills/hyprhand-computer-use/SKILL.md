@@ -23,7 +23,7 @@ hyprhand asks [TypeSafe Jev](https://docs.typesafe.ai), a fast decision model, t
 4. Verify with Jev instead of reading screenshots: `hyprhand --agent me check "the message was sent" --in W` returns `verdict` `yes`, `no`, or `unsure` with a score in about 0.3 s. Phrase it as one concrete, visible fact. Treat `unsure` as no and look yourself. `do --dry-run` shows the first decision without acting.
 5. Wait with Jev instead of sleeping: `hyprhand --agent me wait-for "the KCalc window shows its buttons" --in kcalc --timeout 20000` polls that check every second, also while the window has not appeared yet, and exits nonzero on timeout.
 
-Jev on screenshots is less certain than on accessibility items. Below 0.9 hyprhand zooms in and asks again (`via: "vision, zoomed"`), but hits on small icons can still land a few pixels off, so check vision hits with a screenshot or `check` before anything that sends or deletes.
+On screenshots Jev looks at the whole window, then at an enlarged crop around its first guess, and the confidence comes from that close look. A control that is clipped or missing fails with "does not see" or "a close look rejected it". In that case, enlarge or focus the window, or describe the control by its visible text or position. Check vision hits with `check` before anything that sends or deletes.
 
 ## Manual loop
 
