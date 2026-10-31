@@ -29,7 +29,7 @@ On screenshots Jev looks at the whole window, then at an enlarged crop around it
 
 1. `hyprhand --agent me observe --window <class|id|title-regex> --interactive` lists the window and its elements as `eN role "name" @x,y,w,h (states)`.
 2. Act on ids: `click eN`, `type "text" --into eN`, `set-value eN 5`, `read eN`.
-3. Observe again to confirm. Element ids are only valid for your latest observe.
+3. Observe again to confirm. Element ids are valid until your next `observe` or `find`; `check`, `wait-for`, and `do` leave them alone.
 
 Windows marked `no-a11y` (Electron apps such as Discord, Slack, Vivaldi, WhatsApp) expose no elements. For those, take `hyprhand screenshot --window <w> --out /tmp/x.png`, read the image, and click with window-relative coordinates: `hyprhand click 600,878 --in discord`. Screenshots never show the agent cursors. A capture is at most 1568 px per side, so whole-desktop shots do not exist: pick the window, and for a large window pick the part you need with `--region x,y,w,h --in <w>` (window-relative).
 
@@ -80,4 +80,4 @@ hyprhand doctor
 
 ## MCP
 
-`hyprhand mcp` serves every command as an MCP tool over stdio, with names using underscores (`open_app`, `focus_window`). Each tool accepts an `agent` argument.
+`hyprhand mcp` serves every command as an MCP tool over stdio, with names using underscores (`open_app`, `focus_window`). Each tool accepts an `agent` argument, and calls run concurrently, so parallel agents can share one server.

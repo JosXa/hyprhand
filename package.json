@@ -7,7 +7,16 @@
   "bin": {
     "hyprhand": "bin/hyprhand.js"
   },
-  "files": ["bin", "lib", "skills", "README.md", "LICENSE"],
+  "scripts": {
+    "test": "node --test 'test/*.test.js'"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=20"
   },

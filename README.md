@@ -120,7 +120,7 @@ Run `hyprhand help` for all commands and `hyprhand <command> --help` for their o
 { "command": "hyprhand", "args": ["mcp"] }
 ```
 
-Every command becomes a tool (`do`, `find`, `observe`, `click`, `open_app`, and so on). Each tool takes an `agent` argument, so one server can drive several cursors.
+Every command becomes a tool (`do`, `find`, `observe`, `click`, `open_app`, and so on), with required arguments and defaults taken from the command's flags. Each tool takes an `agent` argument, and calls run concurrently, so one server can drive several cursors at once.
 
 ### Environment
 
@@ -133,6 +133,27 @@ Every command becomes a tool (`do`, `find`, `observe`, `click`, `open_app`, and 
 | `HYPRHAND_CURSOR=0` | Disables the cursor overlay |
 | `HYPRHAND_RESTORE=0` | Leaves the pointer and focus where real input ended |
 | `HYPRHAND_DEBUG=1` | Prints overlay errors |
+
+## Development
+
+```bash
+npm test
+```
+
+The tests cover the pure parts: screen items, capture math, argument parsing, MCP schemas, and the `do` loop with fake screens and a fake Jev. `lib/` splits into:
+
+| Module | Owns |
+| --- | --- |
+| `commands.js` | Command table, flag types and defaults, `invokeCommand` |
+| `act.js` | Clicks, typing, keys, scrolling, and drags on a resolved target |
+| `autopilot.js` | Jev decisions: `locate`, `check`, `waitFor`, and the `do` loop |
+| `screen.js` | What Jev sees of a window: items in reading order, dialog following |
+| `capture.js` | Screenshots, image preparation for Jev, and mapping answers back to the screen |
+| `observe.js` | Accessibility observations and the per-agent element ids |
+| `input.js` | Real pointer and keyboard input with the lock, hover pause, and focus guard |
+| `agent.js` | Agent name, color, remembered window, and per-agent files |
+
+Python helpers: `a11y.py` reads AT-SPI, `images.py` annotates and prepares screenshots, `overlay.py` draws the cursors.
 
 ## Known limits
 
