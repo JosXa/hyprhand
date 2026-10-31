@@ -19,12 +19,12 @@ Pass `--agent NAME` on every call (or set `HYPRHAND_AGENT`). The name selects yo
 2. Act on ids: `click eN`, `type "text" --into eN`, `set-value eN 5`, `read eN`.
 3. Observe again to confirm. Element ids are only valid for your latest observe.
 
-Windows marked `no-a11y` (Electron apps such as Discord, Slack, Vivaldi, WhatsApp) expose no elements. For those, take `hyprhand screenshot --window <w> --out /tmp/x.png`, read the image, and click with window-relative coordinates: `hyprhand click 600,878 --in discord`. Screenshots never show the agent cursors.
+Windows marked `no-a11y` (Electron apps such as Discord, Slack, Vivaldi, WhatsApp) expose no elements. For those, take `hyprhand screenshot --window <w> --out /tmp/x.png`, read the image, and click with window-relative coordinates: `hyprhand click 600,878 --in discord`. Screenshots never show the agent cursors. A capture is at most 1568 px per side, so whole-desktop shots do not exist: pick the window, and for a large window pick the part you need with `--region x,y,w,h --in <w>` (window-relative).
 
 ## Commands
 
 ```bash
-hyprhand --agent me observe [--window W] [--interactive] [--annotated --out /tmp/ui.png] [--format json]
+hyprhand --agent me observe [--window W] [--interactive] [--annotated [--region x,y,w,h] --out /tmp/ui.png] [--format json]
 hyprhand --agent me click eN|W|x,y [--in W] [--double] [--button right] [--physical] [--stay] [--label "Send"]
 hyprhand --agent me move eN|W|x,y [--label "Looking at totals"]
 hyprhand --agent me type "text" [--into eN|W] [--append] [--submit] [--keyboard] [--stay]
@@ -35,7 +35,7 @@ hyprhand --agent me set-value eN 42
 hyprhand --agent me read eN
 hyprhand --agent me open-app org.kde.dolphin [--wait dolphin]
 hyprhand --agent me open-app "flatpak run org.kde.kcalc" --wait kcalc
-hyprhand screenshot [--window W | --monitor DP-1 | --region x,y,w,h] --out /tmp/s.png
+hyprhand screenshot (--window W | --region x,y,w,h [--in W]) --out /tmp/s.png
 hyprhand windows [--all] | active-window | monitors | workspaces | cursor | keybindings
 hyprhand focus-window W | close-window W | workspace N | move-window-workspace N --target W [--silent]
 hyprhand dispatch <hyprland-dispatcher> [args...]

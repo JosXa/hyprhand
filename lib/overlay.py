@@ -104,6 +104,7 @@ class Overlay:
         self.socket_path = socket_path
         self.agents = {}
         self.hidden = False
+        self.pending_hide = None
         self.windows = []
         self.ticking = False
         display = Gdk.Display.get_default()
@@ -132,6 +133,14 @@ class Overlay:
         window.input_shape_combine_region(cairo.Region())
         return window
 
+    def finish_hide(self):
+        if self.pending_hide:
+            replies = self.pending_hide["replies"]
+            self.pending_hide = None
+            for reply in replies:
+                reply({"ok": True})
+        return False
+
     def ensure_ticking(self):
         if not self.ticking:
             self.ticking = True
@@ -154,6 +163,10 @@ class Overlay:
         cr.paint()
         cr.set_operator(cairo.OPERATOR_OVER)
         if self.hidden:
+            if self.pending_hide:
+                self.pending_hide["windows"].discard(area.get_toplevel())
+                if not self.pending_hide["windows"]:
+                    GLib.timeout_add(40, self.finish_hide)
             return
         geometry = monitor.get_geometry()
         cr.translate(-geometry.x, -geometry.y)
@@ -258,11 +271,19 @@ class Overlay:
         op = message.get("op")
         if op == "ping":
             reply({"ok": True, "agents": [a.name for a in self.agents.values()]})
-        elif op == "hide" or op == "show":
-            self.hidden = op == "hide"
+        elif op == "hide":
+            self.hidden = True
+            waiting = self.pending_hide["replies"] if self.pending_hide else []
+            self.pending_hide = {"replies": waiting + [reply], "windows": set(self.windows)}
             for window in self.windows:
                 window.queue_draw()
-            GLib.timeout_add(70, lambda: reply({"ok": True}) and False)
+            GLib.timeout_add(400, self.finish_hide)
+        elif op == "show":
+            self.hidden = False
+            self.ensure_ticking()
+            for window in self.windows:
+                window.queue_draw()
+            reply({"ok": True})
         elif op == "quit":
             reply({"ok": True})
             GLib.idle_add(Gtk.main_quit)

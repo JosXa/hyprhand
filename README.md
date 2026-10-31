@@ -24,7 +24,7 @@ systemctl --user enable --now ydotool
 
 The `ydotoold` daemon must be able to write to `/dev/uinput`. Run `hyprhand doctor` to check everything.
 
-Electron apps (Discord, Slack, VS Code, Chromium browsers) expose accessibility only when started with `--force-renderer-accessibility`. Without it, agents use screenshots and window-relative coordinates for them.
+Electron apps (Discord, Slack, VS Code, Chromium browsers) expose accessibility only when started with `--force-renderer-accessibility`. Without it, agents use screenshots and window-relative coordinates for them. Screenshots are limited to 1568 px per side, so agents capture one window or a window-relative region they chose.
 
 ## Install
 
@@ -46,6 +46,7 @@ hyprhand --agent courier key ctrl+0 --to org.telegram.desktop --stay
 hyprhand --agent courier type "Hello" --into e8 --submit
 hyprhand --agent courier click 600,878 --in discord --stay
 hyprhand screenshot --window discord --out /tmp/discord.png
+hyprhand screenshot --region 0,0,1200,800 --in vivaldi --out /tmp/top-left.png
 hyprhand cursors
 ```
 
