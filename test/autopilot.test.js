@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { test } from 'node:test'
+import { after, test } from 'node:test'
 import { createAutopilot } from '../lib/autopilot.js'
 
 const window = { id: 'w1', address: '0x1', app: 'org.kde.dolphin', title: 'Home', pid: 10, workspace: 4, focusRank: 0, bounds: [100, 50, 900, 600] }
 const logDir = mkdtempSync(path.join(os.tmpdir(), 'hyprhand-test-'))
 let logs = 0
+after(() => rmSync(logDir, { recursive: true, force: true }))
 
 const item = (key, label, bounds = [120, 80, 60, 20]) => ({ key, label, where: 'top-left', criterion: `push button "${label}" (top-left)`, element: { id: key, role: 'push button', name: label, bounds, states: [] } })
 const screen = (signature, items = [item('e1', 'Documents')], title = window.title) => ({ window: { ...window, title }, items, image: null, signature, dispose() {} })
