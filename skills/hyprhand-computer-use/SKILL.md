@@ -11,7 +11,7 @@ Prefer structured routes first: shell commands, app CLIs, browser automation, MC
 
 ## Identity
 
-Pass `--agent NAME` on every call (or set `HYPRHAND_AGENT`). The name selects your cursor color, your element ids, and your remembered target window. Pick a short, stable name per task, such as `calc` or `courier`. Parallel agents must use different names.
+Pass `--agent NAME` on every call (or set `HYPRHAND_AGENT`). The name selects your cursor color, your element ids, and your remembered target window. Pick a short, stable name per task, such as `calc` or `courier`. Parallel agents must use different names. `--label` shows a few words of intent next to your cursor; clicks show the element name by default.
 
 ## Loop
 
@@ -25,7 +25,8 @@ Windows marked `no-a11y` (Electron apps such as Discord, Slack, Vivaldi, WhatsAp
 
 ```bash
 hyprhand --agent me observe [--window W] [--interactive] [--annotated --out /tmp/ui.png] [--format json]
-hyprhand --agent me click eN|W|x,y [--in W] [--double] [--button right] [--physical] [--stay]
+hyprhand --agent me click eN|W|x,y [--in W] [--double] [--button right] [--physical] [--stay] [--label "Send"]
+hyprhand --agent me move eN|W|x,y [--label "Looking at totals"]
 hyprhand --agent me type "text" [--into eN|W] [--append] [--submit] [--keyboard] [--stay]
 hyprhand --agent me key ctrl+l Return [--to W] [--stay]
 hyprhand --agent me scroll down --amount 3 --at eN|W|x,y

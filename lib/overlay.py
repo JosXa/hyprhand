@@ -16,15 +16,33 @@ gi.require_version("PangoCairo", "1.0")
 import cairo
 from gi.repository import Gdk, GLib, Gtk, GtkLayerShell, Pango, PangoCairo
 
-IDLE_DIM_SECONDS = 6.0
-IDLE_REMOVE_SECONDS = 300.0
+LINGER_SECONDS = 3.5
+FADE_SECONDS = 0.8
 RIPPLE_SECONDS = 0.55
 HIGHLIGHT_SECONDS = 1.1
-ARROW = [(0, 0), (0, 21), (5.2, 16.3), (8.6, 24.2), (12.1, 22.7), (8.8, 15.0), (15.6, 15.0)]
+POINTER = [(2.0, 2.0), (25.0, 11.5), (14.6, 14.9), (11.3, 25.3)]
+PILL_FONT = "Inter, Cantarell, Sans Semi-Bold 10"
 
 
 def ease_in_out(t):
     return 4 * t * t * t if t < 0.5 else 1 - pow(-2 * t + 2, 3) / 2
+
+
+def rounded_rect(cr, x, y, w, h, radius):
+    radius = min(radius, w / 2, h / 2)
+    cr.new_sub_path()
+    cr.arc(x + w - radius, y + radius, radius, -math.pi / 2, 0)
+    cr.arc(x + w - radius, y + h - radius, radius, 0, math.pi / 2)
+    cr.arc(x + radius, y + h - radius, radius, math.pi / 2, math.pi)
+    cr.arc(x + radius, y + radius, radius, math.pi, 3 * math.pi / 2)
+    cr.close_path()
+
+
+def pointer_path(cr):
+    cr.move_to(*POINTER[0])
+    for point in POINTER[1:]:
+        cr.line_to(*point)
+    cr.close_path()
 
 
 def parse_hex(color):
@@ -71,8 +89,14 @@ class AgentCursor:
         self.ripples = [r for r in self.ripples if now - r[2] < RIPPLE_SECONDS]
         self.highlights = [h for h in self.highlights if now - h[1] < HIGHLIGHT_SECONDS]
 
-    def animating(self, now):
-        return bool(self.path or self.ripples or self.highlights or now < self.typing_until or now - self.last_active < IDLE_DIM_SECONDS + 1)
+    def idle_seconds(self, now):
+        return now - max(self.last_active, self.typing_until)
+
+    def opacity(self, now):
+        return min(1.0, max(0.0, 1.0 - (self.idle_seconds(now) - LINGER_SECONDS) / FADE_SECONDS))
+
+    def gone(self, now):
+        return not (self.path or self.ripples or self.highlights) and self.opacity(now) <= 0
 
 
 class Overlay:
@@ -117,11 +141,11 @@ class Overlay:
         now = time.monotonic()
         for agent in list(self.agents.values()):
             agent.step(now)
-            if now - agent.last_active > IDLE_REMOVE_SECONDS:
+            if agent.gone(now):
                 del self.agents[agent.name]
         for window in self.windows:
             window.queue_draw()
-        self.ticking = any(agent.animating(now) for agent in self.agents.values())
+        self.ticking = bool(self.agents)
         return self.ticking
 
     def draw(self, area, cr, monitor):
@@ -135,8 +159,7 @@ class Overlay:
         cr.translate(-geometry.x, -geometry.y)
         now = time.monotonic()
         for agent in self.agents.values():
-            idle = now - agent.last_active
-            alpha = 1.0 if idle < IDLE_DIM_SECONDS else max(0.35, 1.0 - (idle - IDLE_DIM_SECONDS) / 2)
+            alpha = agent.opacity(now)
             for bounds, began in agent.highlights:
                 self.draw_highlight(cr, agent, bounds, (now - began) / HIGHLIGHT_SECONDS)
             for x, y, began in agent.ripples:
@@ -148,13 +171,7 @@ class Overlay:
         fade = 1.0 - max(0.0, progress - 0.6) / 0.4
         r, g, b = agent.color
         cr.save()
-        cr.new_sub_path()
-        radius = min(6, w / 2, h / 2)
-        cr.arc(x + w - radius, y + radius, radius, -math.pi / 2, 0)
-        cr.arc(x + w - radius, y + h - radius, radius, 0, math.pi / 2)
-        cr.arc(x + radius, y + h - radius, radius, math.pi / 2, math.pi)
-        cr.arc(x + radius, y + radius, radius, math.pi, 3 * math.pi / 2)
-        cr.close_path()
+        rounded_rect(cr, x, y, w, h, 6)
         cr.set_source_rgba(r, g, b, 0.12 * fade)
         cr.fill_preserve()
         cr.set_source_rgba(r, g, b, 0.9 * fade)
@@ -172,38 +189,58 @@ class Overlay:
         cr.restore()
 
     def draw_cursor(self, cr, agent, alpha, now):
+        if alpha <= 0:
+            return
         r, g, b = agent.color
         cr.save()
-        cr.translate(agent.x, agent.y)
-        cr.move_to(*ARROW[0])
-        for point in ARROW[1:]:
-            cr.line_to(*point)
-        cr.close_path()
-        cr.set_source_rgba(r, g, b, alpha)
-        cr.fill_preserve()
-        cr.set_source_rgba(1, 1, 1, alpha)
-        cr.set_line_width(1.6)
+        cr.translate(round(agent.x), round(agent.y))
         cr.set_line_join(cairo.LINE_JOIN_ROUND)
+        for spread, shadow in ((9, 0.05), (6, 0.08), (3.5, 0.12)):
+            cr.save()
+            cr.translate(0, 1.5)
+            pointer_path(cr)
+            cr.set_line_width(spread + 4)
+            cr.set_source_rgba(0, 0, 0, shadow * alpha)
+            cr.stroke()
+            cr.restore()
+        pointer_path(cr)
+        cr.set_line_width(6.5)
+        cr.set_source_rgba(1, 1, 1, alpha)
+        cr.stroke_preserve()
+        cr.set_source_rgba(r, g, b, alpha)
+        cr.set_line_width(1.2)
+        cr.fill_preserve()
         cr.stroke()
-        text = agent.name if not agent.label else f"{agent.name} · {agent.label}"
+        self.draw_pill(cr, agent, alpha, now)
+        cr.restore()
+
+    def draw_pill(self, cr, agent, alpha, now):
+        name = GLib.markup_escape_text(agent.name)
+        markup = f"<span weight='600'>{name}</span>"
+        if agent.label:
+            markup += f"<span alpha='65%'>  {GLib.markup_escape_text(agent.label)}</span>"
         if now < agent.typing_until:
-            text += " ⌨"
+            markup += "<span alpha='65%'>  typing…</span>"
         layout = PangoCairo.create_layout(cr)
-        layout.set_font_description(Pango.FontDescription.from_string("Sans Bold 9"))
-        layout.set_text(text, -1)
-        width, height = layout.get_pixel_size()
-        pill_x, pill_y, pad = 16, 20, 6
-        cr.new_sub_path()
-        radius = (height + 4) / 2
-        cr.arc(pill_x + radius, pill_y + radius, radius, math.pi / 2, 3 * math.pi / 2)
-        cr.arc(pill_x + width + 2 * pad - radius, pill_y + radius, radius, -math.pi / 2, math.pi / 2)
-        cr.close_path()
-        cr.set_source_rgba(r, g, b, 0.92 * alpha)
-        cr.fill()
-        cr.move_to(pill_x + pad, pill_y + 2)
+        layout.set_font_description(Pango.FontDescription.from_string(PILL_FONT))
+        layout.set_markup(markup, -1)
+        text_width, text_height = layout.get_pixel_size()
+        pad_x, pad_y = 11, 5
+        x, y = 24, 27
+        width, height = text_width + 2 * pad_x, text_height + 2 * pad_y
+        for spread, shadow in ((4, 0.06), (2, 0.1)):
+            rounded_rect(cr, x - spread, y - spread + 2, width + 2 * spread, height + 2 * spread, height / 2 + spread)
+            cr.set_source_rgba(0, 0, 0, shadow * alpha)
+            cr.fill()
+        rounded_rect(cr, x, y, width, height, height / 2)
+        cr.set_source_rgba(0.07, 0.07, 0.08, 0.94 * alpha)
+        cr.fill_preserve()
+        cr.set_source_rgba(1, 1, 1, 0.14 * alpha)
+        cr.set_line_width(1)
+        cr.stroke()
+        cr.move_to(x + pad_x, y + pad_y)
         cr.set_source_rgba(1, 1, 1, alpha)
         PangoCairo.show_layout(cr, layout)
-        cr.restore()
 
     def agent(self, message):
         name = message.get("agent") or "agent"
