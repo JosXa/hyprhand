@@ -1,5 +1,7 @@
 # hyprhand
 
+[![Project type: Houseplant](https://img.shields.io/badge/%F0%9F%AA%B4%20Houseplant%20-x?style=flat&label=Project%20type&color=1E1E1D)](https://www.hannahilea.com/blog/houseplant-programming)
+
 Computer use for [Hyprland](https://hyprland.org). hyprhand lets AI agents read and operate GUI apps on your desktop. Each agent gets its own colored, labeled cursor, so you can watch several of them work at the same time.
 
 ![Two agents drive KCalc and Dolphin in parallel, then a third draws "HI!" in Pinta and discards it](docs/demo.gif)
