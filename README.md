@@ -4,9 +4,9 @@
 
 Computer use for [Hyprland](https://hyprland.org). hyprhand lets AI agents read and operate GUI apps on your desktop. Each agent gets its own colored, labeled cursor, so you can watch several of them work at the same time.
 
-![Two agents drive KCalc and Dolphin in parallel, then a third draws "HI!" in Pinta and discards it](docs/demo.gif)
+![Two agents work in parallel: one computes 12 × 34 × 25 in KCalc, the other paints "HI!" and types "hyprhand" in Pinta](docs/demo.gif)
 
-The demo above runs at 1.6× speed. The `calc` agent computes 12 × 34 while `files` opens a folder in Dolphin. Then `artist` picks Pinta's brush, sets its width, finds the canvas, draws, and clicks Discard in the save dialog. A fast decision model chose every target from a plain description, and each decision took about 0.2 s.
+The demo above runs at 1.6× speed, and every target in it was chosen from a plain description. The `calc` agent runs two `do` goals in KCalc, 12 × 34 and then × 25, and confirms each result with `check`. At the same time, `artist` sets up Pinta's brush through accessibility and picks the red and blue palette swatches and the canvas by vision. It paints "HI!", sets the font size in Pinta's font dialog, types "hyprhand", and clicks Discard in the save dialog. Each decision took about 0.2 s, and each vision match about 0.6 s.
 
 hyprhand is a CLI and an MCP server. It is plain Node.js with small Python helpers for accessibility and the cursor overlay.
 
@@ -25,7 +25,7 @@ hyprhand picks the cheapest route that works and drops to the next one only when
 [TypeSafe Jev](https://docs.typesafe.ai) is a small, fast classifier. hyprhand builds the screen state itself and asks Jev one structured question at a time, following the design of [typesafe-computer-use](https://github.com/awlevin/typesafe-computer-use). The state lists the accessibility items in reading order, each with its role, label, screen region, and row neighbors. Apps without accessibility, such as Electron apps, send a scaled screenshot instead.
 
 - `find "the Send button" --in telegram` returns the matching element, how it was found (`accessibility` or `vision`), and a confidence.
-- `--find` on `click`, `move`, `type`, and `scroll` acts on that match directly.
+- `--find` on `click`, `move`, `type`, `scroll`, `set-value`, and `read` acts on that match directly.
 - On a screenshot, Jev looks twice, following TypeSafe's [vision guidance](https://docs.typesafe.ai). It first answers whether the control is visible and boxes it on the whole window. Then hyprhand crops three times that box, enlarges it, and asks again. The confidence comes from the zoomed look, so a control that is cut off or missing scores low instead of returning a wrong box. Images go up as multipart uploads at JPEG quality 90, and small windows are enlarged first. In Discord this places the gift and GIF buttons, the input box, and the server icons at 0.75–0.99 in about 0.8 s.
 - `check "the message was sent" --in W` asks Jev a yes/no question about the screenshot and the accessibility items. It answers `yes`, `no`, or `unsure` with a score in about 0.3 s, so agents can verify a step without reading screenshots themselves.
 - `wait-for "the upload finished" --in W` repeats that check every second until it holds, and fails after `--timeout` (30 s by default). It keeps polling while the window does not exist yet, so it also waits for an app to start.

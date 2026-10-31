@@ -6,9 +6,9 @@ import { commands, normalizeInput } from '../lib/commands.js'
 import { resolveWindow } from '../lib/hypr.js'
 import { parseKeyCombo } from '../lib/input.js'
 import { tools } from '../lib/mcp.js'
-import { screenItems, workWindow } from '../lib/screen.js'
+import { frontmostSibling, gatherDialogs, screenItems, workWindow } from '../lib/screen.js'
 
-const window = (overrides) => ({ id: 'w1', address: '0x1', app: 'org.kde.dolphin', title: 'Home', pid: 10, workspace: 4, focusRank: 1, visible: true, bounds: [0, 0, 900, 600], ...overrides })
+const window = (overrides) => ({ id: 'w1', address: '0x1', app: 'org.kde.dolphin', title: 'Home', pid: 10, workspace: 4, focusRank: 1, visible: true, floating: false, pinned: false, bounds: [0, 0, 900, 600], ...overrides })
 const element = (overrides) => ({ id: 'e1', role: 'push button', name: 'OK', bounds: [10, 10, 50, 20], interactive: true, states: [], ...overrides })
 
 test('parseBox accepts x,y,w,h and rejects empty sizes', () => {
@@ -61,6 +61,19 @@ test('workWindow follows a dialog of the same app on the same workspace', () => 
   assert.equal(workWindow('kitty', [main, dialog, other]).id, 'w3')
 })
 
+test('a dialog that opened on another workspace is moved and centered over its app', () => {
+  const main = window({ workspace: '6', workspaceId: 6, bounds: [1000, 0, 900, 1000] })
+  const dialog = window({ id: 'w2', address: '0x2', app: 'dotnet', floating: true, workspace: '1', workspaceId: 1, bounds: [10, 10, 400, 500], focusRank: 3 })
+  const pip = window({ id: 'w4', address: '0x4', floating: true, pinned: true, workspace: '1', workspaceId: 1 })
+  const calls = []
+  assert.equal(gatherDialogs(main, [main, dialog, pip], (...args) => calls.push(args)), true)
+  assert.deepEqual(calls, [
+    ['movetoworkspacesilent', '6,address:0x2'],
+    ['movewindowpixel', 'exact 1250 250,address:0x2'],
+  ])
+  assert.equal(frontmostSibling(main, [main, { ...dialog, workspace: '6' }]).id, 'w2')
+})
+
 test('resolveWindow errors carry the NO_WINDOW code', () => {
   assert.throws(() => resolveWindow('nothing-like-this', [window()]), (error) => error.code === 'NO_WINDOW')
 })
@@ -91,7 +104,7 @@ test('normalizeInput applies defaults, types values, and names missing arguments
 
 test('MCP schemas come from the command flags', () => {
   const schema = (name) => tools.find((tool) => tool.name === name).inputSchema
-  assert.deepEqual(schema('set_value').required, ['target', 'value'])
+  assert.deepEqual(schema('set_value').required, ['value'])
   assert.equal(schema('scroll').required, undefined)
   assert.equal(schema('scroll').properties.amount.default, 3)
   assert.deepEqual(schema('wait_for').required, ['condition'])
