@@ -30,7 +30,7 @@ hyprhand picks the cheapest route that works and drops to the next one only when
 - `check "the message was sent" --in W` asks Jev a yes/no question about the screenshot and the accessibility items. It answers `yes`, `no`, or `unsure` with a score in about 0.3 s, so agents can verify a step without reading screenshots themselves.
 - `wait-for "the upload finished" --in W` repeats that check every second until it holds, and fails after `--timeout` (30 s by default). It keeps polling while the window does not exist yet, so it also waits for an app to start.
 - `do "<goal>" --in W` loops: Jev picks one action (click an item, type allowed text, Enter, Escape, back, scroll, wait), hyprhand runs it, and Jev checks whether the goal is met. The run stops with a status of `done`, `unsure` (with the alternatives Jev hesitated between), `no_way_forward`, `stuck`, or `step_limit`. Every earlier action carries what it led to, including "back to the screen from before step 1", so a goal that ends where it started ("open Documents, then go back") still finishes. Each run is logged under `~/.cache/hyprhand/runs`.
-- When an app opens a dialog, `find` and `do` follow it, so `--find "the Discard button" --in pinta` reaches Pinta's save prompt.
+- When an app opens a dialog, `find` and `do` follow it, so `--find "the Discard button" --in pinta` reaches Pinta's save prompt. If Hyprland opened the dialog on another workspace, hyprhand moves it back and centers it over its app.
 
 Jev classifies; it does not plan. `do` works best when the goal lists concrete steps in order, such as `"Press 1, 2, Multiply, 3, 4, Equals"`. When it is unsure, it stops and says so instead of guessing. The calling agent then reads the screen itself or writes a more specific goal.
 
