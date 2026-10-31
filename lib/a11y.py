@@ -14,6 +14,9 @@ except ImportError:
     print(json.dumps({"ok": False, "error": "pyatspi is not installed (pacman -S python-atspi at-spi2-core)"}))
     sys.exit(0)
 
+CALL_TIMEOUT_MS = 2000
+pyatspi.Atspi.set_timeout(CALL_TIMEOUT_MS, -1)
+
 INTERACTIVE_ROLES = {
     "push button", "toggle button", "check box", "radio button", "menu item", "check menu item", "radio menu item",
     "menu", "combo box", "entry", "password text", "text", "spin button", "slider", "scroll bar", "link",
@@ -88,6 +91,30 @@ def apps_by_pid(pids=None):
         if app and (pids is None or pid in pids):
             found.append((pid, app))
     return found
+
+
+def parent_pid(pid):
+    try:
+        with open(f"/proc/{pid}/stat") as stat:
+            return int(stat.read().rsplit(")", 1)[1].split()[1])
+    except (OSError, ValueError, IndexError):
+        return 0
+
+
+def descends_from(pid, ancestor):
+    while pid and pid > 1:
+        if pid == ancestor:
+            return True
+        pid = parent_pid(pid)
+    return False
+
+
+def flatpak_proxy(pid):
+    try:
+        with open(f"/proc/{pid}/comm") as comm:
+            return comm.read().strip() == "xdg-dbus-proxy"
+    except OSError:
+        return False
 
 
 def top_levels(app):
@@ -198,7 +225,6 @@ def dump(request):
     apps = {}
     for pid, app in apps_by_pid():
         apps.setdefault(pid, []).append(app)
-    sandboxed = [(pid, app) for pid, app_list in apps.items() if pid not in pids for app in app_list]
     result = {"ok": True, "elements": [], "accessible_windows": [], "truncated": False}
     seen = set()
     for window in windows:
@@ -207,7 +233,10 @@ def dump(request):
         app_pid = window["pid"]
         if not top_level:
             title = window["title"].strip().lower()
-            titled = [(pid, t) for pid, app in sandboxed for t in top_levels(app) if title and (safe(lambda n=t[1]: n.name, "") or "").strip().lower() == title]
+            children = [(pid, t) for pid, app_list in apps.items() if pid not in pids and descends_from(pid, window["pid"]) for app in app_list for t in top_levels(app)]
+            proxied = [(pid, t) for pid, app_list in apps.items() if pid not in pids and flatpak_proxy(pid) for app in app_list for t in top_levels(app)]
+            chosen = match_top_level(window, [t for _, t in children])
+            titled = [(pid, t) for pid, t in children if t is chosen] if chosen else [(pid, t) for pid, t in proxied if title and (safe(lambda n=t[1]: n.name, "") or "").strip().lower() == title]
             if len(titled) != 1:
                 continue
             app_pid, top_level = titled[0]

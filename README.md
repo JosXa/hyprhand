@@ -27,7 +27,7 @@ hyprhand picks the cheapest route that works and drops to the next one only when
 - On a screenshot, Jev looks twice, following TypeSafe's [vision guidance](https://docs.typesafe.ai). It first answers whether the control is visible and boxes it on the whole window. Then hyprhand crops three times that box, enlarges it, and asks again. The confidence comes from the zoomed look, so a control that is cut off or missing scores low instead of returning a wrong box. Images go up as multipart uploads at JPEG quality 90, and small windows are enlarged first. In Discord this places the gift and GIF buttons, the input box, and the server icons at 0.75–0.99 in about 0.8 s.
 - `check "the message was sent" --in W` asks Jev a yes/no question about the screenshot and the accessibility items. It answers `yes`, `no`, or `unsure` with a score in about 0.3 s, so agents can verify a step without reading screenshots themselves.
 - `wait-for "the upload finished" --in W` repeats that check every second until it holds, and fails after `--timeout` (30 s by default). It keeps polling while the window does not exist yet, so it also waits for an app to start.
-- `do "<goal>" --in W` loops: Jev picks one action (click an item, type allowed text, Enter, Escape, back, scroll, wait), hyprhand runs it, and Jev checks whether the goal is met. The run stops with a status of `done`, `unsure` (with the alternatives Jev hesitated between), `no_way_forward`, `stuck`, or `step_limit`. Each run is logged under `~/.cache/hyprhand/runs`.
+- `do "<goal>" --in W` loops: Jev picks one action (click an item, type allowed text, Enter, Escape, back, scroll, wait), hyprhand runs it, and Jev checks whether the goal is met. The run stops with a status of `done`, `unsure` (with the alternatives Jev hesitated between), `no_way_forward`, `stuck`, or `step_limit`. Every earlier action carries what it led to, including "back to the screen from before step 1", so a goal that ends where it started ("open Documents, then go back") still finishes. Each run is logged under `~/.cache/hyprhand/runs`.
 - When an app opens a dialog, `find` and `do` follow it, so `--find "the Discard button" --in pinta` reaches Pinta's save prompt.
 
 Jev classifies; it does not plan. `do` works best when the goal lists concrete steps in order, such as `"Press 1, 2, Multiply, 3, 4, Equals"`. When it is unsure, it stops and says so instead of guessing. The calling agent then reads the screen itself or writes a more specific goal.
@@ -42,7 +42,7 @@ Real input goes through `hyprctl dispatch movecursor`, `ydotool`, and `wtype`, a
 
 - A lock lets one agent at a time use real input.
 - While it runs, hyprhand sets `input:follow_mouse` to 0, so your mouse does not pull focus away, and afterwards it restores your pointer, focused window, and `follow_mouse`.
-- `type` and `key` check every 8 characters that the target window still has keyboard focus, and stop if it moved. If a launcher or menu holds the keyboard, the error names its layer.
+- `type` sends the whole text through one `wtype` process, so Electron and GTK4 receive every character, and kills it the moment Hyprland reports a focus change; `key` checks focus before each combo. If a launcher or menu holds the keyboard, the error names its layer.
 - `type` and `key` refuse to run when they have no live target window, so input never lands in whatever happens to be focused.
 - Screenshots wait for window animations to finish.
 
@@ -136,9 +136,8 @@ Every command becomes a tool (`do`, `find`, `observe`, `click`, `open_app`, and 
 
 ## Known limits
 
-- Keyboard typing into Electron apps and some GTK4 dialogs can drop characters, mostly spaces and hyphens. Setting text through accessibility (`type --into eN`) is reliable where the app exposes the field.
 - Jev's matches on screenshots are slower than on accessibility items (two requests) and score lower on icons without text, so check a vision hit before anything that sends or deletes.
-- `do` can miss that a goal is done when the finished screen looks like the starting screen, such as "open a folder, then go back".
+- Electron apps such as Discord and Slack expose no accessibility tree unless started with `--force-renderer-accessibility`, so hyprhand falls back to vision there.
 
 ## Credits
 

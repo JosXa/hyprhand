@@ -52,7 +52,7 @@ hyprhand --agent me set-value eN 42
 hyprhand --agent me read eN
 hyprhand --agent me open-app org.kde.dolphin [--wait dolphin]
 hyprhand --agent me open-app "flatpak run org.kde.kcalc" --wait kcalc
-hyprhand screenshot (--window W | --region x,y,w,h [--in W]) --out /tmp/s.png
+hyprhand screenshot (--window W [--region x,y,w,h] | --region x,y,w,h) --out /tmp/s.png
 hyprhand windows [--all] | active-window | monitors | workspaces | cursor | keybindings
 hyprhand focus-window W | close-window W | workspace N | move-window-workspace N --target W [--silent]
 hyprhand dispatch <hyprland-dispatcher> [args...]
