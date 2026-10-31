@@ -9,6 +9,7 @@ It is a CLI and an MCP server, written in plain Node.js with small Python helper
 - **Reads app UIs through AT-SPI.** `observe` lists windows from `hyprctl` and the accessible elements inside them, each with a short id, role, name, state, and global screen bounds. Bounds come from window-relative accessibility coordinates plus the Hyprland window position, since global coordinates from AT-SPI are wrong on Wayland.
 - **Acts semantically first.** Clicking an element runs its accessibility action, and typing into a text field sets its content. Neither touches your pointer or keyboard focus, so agents can work on background windows and in parallel.
 - **Falls back to real input when needed.** Coordinates, double and right clicks, drags, scrolling, and key presses go through `hyprctl dispatch movecursor`, `ydotool`, and `wtype`. A lock serializes real input between agents. While real input runs, hyprhand sets `input:follow_mouse` to 0, so moving your mouse does not pull focus away mid-action, and it stops typing if focus moves anyway. Afterwards it puts your pointer, focused window, and `follow_mouse` back.
+- **Lets a fast decision model choose.** With a [TypeSafe](https://typesafe.ai) key, `find "the Send button"` and `--find` resolve a described control, and `do "<goal>"` runs a whole sequence in one window. hyprhand builds the screen state itself (accessibility items in reading order with their region and row neighbors, or a scaled screenshot for apps without accessibility) and asks Jev one structured question per step. A decision takes about 0.2–0.5 s and a fraction of a cent. Runs stop and report when Jev is unsure, stalls, or repeats itself, and every run is logged under `~/.cache/hyprhand/runs`. The approach follows [typesafe-computer-use](https://github.com/awlevin/typesafe-computer-use).
 - **Draws one cursor per agent.** A click-through GTK layer-shell overlay animates each agent's cursor along a curved path, with a name pill, click ripples, and target highlights. A cursor fades out a few seconds after its agent's last action. Screenshots hide the overlay.
 - **Finds the session by itself.** It discovers `HYPRLAND_INSTANCE_SIGNATURE`, `WAYLAND_DISPLAY`, and the ydotool socket through `hyprctl instances`, so it works from services, SSH, and agent harnesses that lack a desktop environment. It also enables the AT-SPI bus when it is off.
 - **Handles Flatpak apps.** Sandboxed apps register with a different process id; hyprhand matches them by window title.
@@ -40,6 +41,9 @@ The agent skill lives in [skills/hyprhand-computer-use](skills/hyprhand-computer
 
 ```bash
 hyprhand --agent calc open-app "flatpak run org.kde.kcalc" --wait kcalc
+hyprhand --agent calc do "Press 1, 0, Multiply, 2, 0, Equals" --in kcalc
+hyprhand --agent calc click --find "the All clear button" --in kcalc
+hyprhand --agent courier find "the message input box" --in discord
 hyprhand --agent calc observe --window kcalc --interactive
 hyprhand --agent calc click e11
 hyprhand --agent courier key ctrl+0 --to org.telegram.desktop --stay
@@ -65,6 +69,8 @@ Every command becomes a tool (`observe`, `click`, `type`, `open_app`, and so on)
 | Variable | Effect |
 | --- | --- |
 | `HYPRHAND_AGENT` | Agent name when `--agent` is not passed |
+| `TYPESAFE_API_KEY` | Enables `find`, `--find`, and `do` through Jev |
+| `HYPRHAND_JEV_MODEL` | Jev model, default `jev-latest` |
 | `HYPRHAND_COLOR` | Cursor color override, such as `#ff5f87` |
 | `HYPRHAND_CURSOR=0` | Disable the cursor overlay |
 | `HYPRHAND_RESTORE=0` | Leave the pointer and focus where real input ended |

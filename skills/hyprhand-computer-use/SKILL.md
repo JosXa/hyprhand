@@ -13,7 +13,18 @@ Prefer structured routes first: shell commands, app CLIs, browser automation, MC
 
 Pass `--agent NAME` on every call (or set `HYPRHAND_AGENT`). The name selects your cursor color, your element ids, and your remembered target window. Pick a short, stable name per task, such as `calc` or `courier`. Parallel agents must use different names. `--label` shows a few words of intent next to your cursor; clicks show the element name by default.
 
-## Loop
+## Jev first
+
+hyprhand asks [TypeSafe Jev](https://docs.typesafe.ai), a fast decision model, to pick targets and next actions. A Jev decision takes about 0.2–0.5 s and costs a fraction of a cent, which is far quicker and cheaper than you reading an element list or a screenshot. Use it as the default way to act, and fall back to reading the UI yourself when Jev reports it is unsure. It needs `TYPESAFE_API_KEY`; `hyprhand doctor` shows whether it is set.
+
+1. Describe the control instead of looking it up: `hyprhand --agent me click --find "the Send button" --in telegram`. `--find` works on `click`, `move`, `type` and `scroll`, and `hyprhand find "…" --in W` only reports the match. Jev chooses among accessibility elements when the window has them, and locates the control on a screenshot otherwise (Electron apps). The result names the target, how it was found (`accessibility` or `vision`), and the confidence.
+2. For a sequence of steps in one window, run `hyprhand --agent me do "<goal>" --in W`. Jev picks one action per step (click an item, type, Enter, Escape, back, scroll, wait), checks after each step whether the goal is met, and returns a report with `status`: `done`, `unsure` (with the alternatives it hesitated between), `no_way_forward`, `stuck`, or `step_limit`. Quoted text in the goal and `--input name=value` are the only text it may type.
+3. Jev classifies; it does not plan. Write the goal as the concrete steps in order, for example `do "Press 1, 0, Multiply, 2, 0, Equals"`, rather than `do "work out 10 times 20"`. When a run stops as `unsure` or `no_way_forward`, read the report, observe yourself, and continue with plain commands or a more specific goal.
+4. Confirm the outcome yourself with `read eN`, `observe`, or a screenshot before you report success. `do --dry-run` shows the first decision without acting.
+
+Jev on screenshots is less certain than on accessibility items (around 0.4–0.5 confidence for a correct hit), so check vision hits with a screenshot before anything that sends or deletes.
+
+## Manual loop
 
 1. `hyprhand --agent me observe --window <class|id|title-regex> --interactive` lists the window and its elements as `eN role "name" @x,y,w,h (states)`.
 2. Act on ids: `click eN`, `type "text" --into eN`, `set-value eN 5`, `read eN`.
@@ -24,6 +35,9 @@ Windows marked `no-a11y` (Electron apps such as Discord, Slack, Vivaldi, WhatsAp
 ## Commands
 
 ```bash
+hyprhand --agent me do "<goal as ordered steps>" [--in W] [--input name=value] [--steps 25] [--min-confidence 0.4] [--dry-run]
+hyprhand --agent me find "<description>" [--in W]
+hyprhand --agent me click|move|type|scroll ... --find "<description>" [--in W]
 hyprhand --agent me observe [--window W] [--interactive] [--annotated [--region x,y,w,h] --out /tmp/ui.png] [--format json]
 hyprhand --agent me click eN|W|x,y [--in W] [--double] [--button right] [--physical] [--stay] [--label "Send"]
 hyprhand --agent me move eN|W|x,y [--label "Looking at totals"]

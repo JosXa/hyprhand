@@ -15,10 +15,12 @@ function parseArgs(argv) {
     if (arg.startsWith('--')) {
       const [key, inline] = arg.slice(2).split(/=(.*)/s)
       const next = argv[index + 1]
-      if (inline !== undefined) options[key] = inline
-      else if (next === undefined || next.startsWith('--')) options[key] = true
-      else if (['true', 'false'].includes(next)) options[key] = next === 'true', index++
-      else options[key] = next, index++
+      let value
+      if (inline !== undefined) value = inline
+      else if (next === undefined || next.startsWith('--')) value = true
+      else if (['true', 'false'].includes(next)) value = next === 'true', index++
+      else value = next, index++
+      options[key] = key in options ? [].concat(options[key], value) : value
     } else positional.push(arg)
   }
   return { positional, options }
