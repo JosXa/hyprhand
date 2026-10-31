@@ -63,22 +63,22 @@ class AgentCursor:
         self.last_active = time.monotonic()
         self.typing_until = 0.0
 
-    def travel_to(self, x, y, duration, done):
+    def travel_to(self, x, y, duration, done, straight=False):
         start = (self.x, self.y)
         distance = math.hypot(x - start[0], y - start[1])
         if distance < 1:
             done()
             return
         normal = (-(y - start[1]) / distance, (x - start[0]) / distance)
-        bow = min(distance * 0.18, 120) * (1 if hash((self.name, round(x), round(y))) % 2 else -1)
+        bow = 0 if straight else min(distance * 0.18, 120) * (1 if hash((self.name, round(x), round(y))) % 2 else -1)
         middle = ((start[0] + x) / 2 + normal[0] * bow, (start[1] + y) / 2 + normal[1] * bow)
-        self.path = {"start": start, "control": middle, "end": (x, y), "began": time.monotonic(), "duration": duration, "done": done}
+        self.path = {"start": start, "control": middle, "end": (x, y), "began": time.monotonic(), "duration": duration, "done": done, "ease": (lambda t: t) if straight else ease_in_out}
 
     def step(self, now):
         if self.path:
             path = self.path
             t = min(1.0, (now - path["began"]) / path["duration"])
-            e = ease_in_out(t)
+            e = path["ease"](t)
             (x0, y0), (cx, cy), (x1, y1) = path["start"], path["control"], path["end"]
             self.x = (1 - e) ** 2 * x0 + 2 * (1 - e) * e * cx + e * e * x1
             self.y = (1 - e) ** 2 * y0 + 2 * (1 - e) * e * cy + e * e * y1
@@ -307,7 +307,7 @@ class Overlay:
             if target:
                 distance = math.hypot(target[0] - agent.x, target[1] - agent.y)
                 duration = float(message.get("travel_ms", min(650, max(180, 140 + distance * 0.3)))) / 1000
-                agent.travel_to(target[0], target[1], duration, arrived)
+                agent.travel_to(target[0], target[1], duration, arrived, straight=bool(message.get("straight")))
             else:
                 arrived()
             self.ensure_ticking()

@@ -14,7 +14,7 @@ hyprhand picks the cheapest route that works and drops to the next one only when
 
 | Route | Used for | Cost |
 | --- | --- | --- |
-| **Jev decisions** | Finding a described control (`find`, `--find`) and running step sequences (`do`) | 0.15–0.5 s and a fraction of a cent per decision |
+| **Jev decisions** | Finding a described control (`find`, `--find`), verifying the screen (`check`, `wait-for`), and running step sequences (`do`) | 0.15–0.5 s and a fraction of a cent per decision |
 | **Accessibility (AT-SPI)** | Clicking elements, setting text and values, reading content | Instant; leaves your pointer and focus alone |
 | **Real input** | Coordinates, drags, scrolling, right and double clicks, key presses | Briefly borrows your pointer and keyboard |
 
@@ -24,6 +24,9 @@ hyprhand picks the cheapest route that works and drops to the next one only when
 
 - `find "the Send button" --in telegram` returns the matching element, how it was found (`accessibility` or `vision`), and a confidence.
 - `--find` on `click`, `move`, `type`, and `scroll` acts on that match directly.
+- When a screenshot match scores below 0.9, hyprhand crops around it and asks Jev again on the zoomed image (`via: "vision, zoomed"`). This tells apart neighbors such as Discord's gift and GIF buttons.
+- `check "the message was sent" --in W` asks Jev a yes/no question about the screenshot and the accessibility items. It answers `yes`, `no`, or `unsure` with a score in about 0.3 s, so agents can verify a step without reading screenshots themselves.
+- `wait-for "the upload finished" --in W` repeats that check every second until it holds, and fails after `--timeout` (30 s by default). It keeps polling while the window does not exist yet, so it also waits for an app to start.
 - `do "<goal>" --in W` loops: Jev picks one action (click an item, type allowed text, Enter, Escape, back, scroll, wait), hyprhand runs it, and Jev checks whether the goal is met. The run stops with a status of `done`, `unsure` (with the alternatives Jev hesitated between), `no_way_forward`, `stuck`, or `step_limit`. Each run is logged under `~/.cache/hyprhand/runs`.
 - When an app opens a dialog, `find` and `do` follow it, so `--find "the Discard button" --in pinta` reaches Pinta's save prompt.
 
@@ -45,7 +48,7 @@ Real input goes through `hyprctl dispatch movecursor`, `ydotool`, and `wtype`, a
 
 ## Cursors
 
-A click-through GTK layer-shell overlay draws one cursor per agent. Each cursor travels along a curved path and shows a name pill, ripples on clicks, and a highlight on its target. It fades out a few seconds after its agent's last action. The agent name picks the color, and screenshots hide the overlay.
+A click-through GTK layer-shell overlay draws one cursor per agent. Each cursor travels along a curved path, follows a drag along the same straight line and at the same speed as the real pointer, and shows a name pill, ripples on clicks, and a highlight on its target. It fades out a few seconds after its agent's last action. The agent name picks the color, and screenshots hide the overlay.
 
 ## Recording
 
@@ -60,7 +63,7 @@ sudo pacman -S hyprland grim ydotool wtype wf-recorder python-atspi at-spi2-core
 systemctl --user enable --now ydotool
 ```
 
-The `ydotoold` daemon must be able to write to `/dev/uinput`. For Jev, set `TYPESAFE_API_KEY` from [console.typesafe.ai/keys](https://console.typesafe.ai/keys); without it, everything except `find`, `--find`, and `do` still works.
+The `ydotoold` daemon must be able to write to `/dev/uinput`. For Jev, set `TYPESAFE_API_KEY` from [console.typesafe.ai/keys](https://console.typesafe.ai/keys); without it, everything except `find`, `--find`, `check`, `wait-for`, and `do` still works.
 
 Electron apps (Discord, Slack, VS Code, Chromium browsers) expose accessibility only when started with `--force-renderer-accessibility`. Without that flag, hyprhand uses Jev vision or screenshots for them.
 
@@ -85,6 +88,8 @@ Pass `--agent NAME` on every call. The name selects the cursor color, the elemen
 hyprhand --agent calc do "Press 1, 2, Multiply, 3, 4, Equals" --in kcalc
 hyprhand --agent calc click --find "the All clear button" --in kcalc
 hyprhand --agent courier find "the message input box" --in discord
+hyprhand --agent calc check "the display shows 408" --in kcalc
+hyprhand --agent calc wait-for "the calculator window is open" --in kcalc --timeout 20000
 
 # Work with element ids yourself
 hyprhand --agent calc observe --window kcalc --interactive
@@ -122,7 +127,7 @@ Every command becomes a tool (`do`, `find`, `observe`, `click`, `open_app`, and 
 | Variable | Effect |
 | --- | --- |
 | `HYPRHAND_AGENT` | Agent name when `--agent` is not passed |
-| `TYPESAFE_API_KEY` | Enables `find`, `--find`, and `do` |
+| `TYPESAFE_API_KEY` | Enables `find`, `--find`, `check`, `wait-for`, and `do` |
 | `HYPRHAND_JEV_MODEL` | Jev model, default `jev-latest` |
 | `HYPRHAND_COLOR` | Cursor color override, such as `#ff5f87` |
 | `HYPRHAND_CURSOR=0` | Disables the cursor overlay |
@@ -132,7 +137,7 @@ Every command becomes a tool (`do`, `find`, `observe`, `click`, `open_app`, and 
 ## Known limits
 
 - Keyboard typing into Electron apps and some GTK4 dialogs can drop characters, mostly spaces and hyphens. Setting text through accessibility (`type --into eN`) is reliable where the app exposes the field.
-- Jev's matches on screenshots are less certain than on accessibility items, so check a vision hit before anything that sends or deletes.
+- Jev's matches on screenshots are less certain than on accessibility items and can land a few pixels off small icons, so check a vision hit before anything that sends or deletes.
 - `do` can miss that a goal is done when the finished screen looks like the starting screen, such as "open a folder, then go back".
 
 ## Credits

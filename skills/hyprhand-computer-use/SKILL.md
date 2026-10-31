@@ -20,9 +20,10 @@ hyprhand asks [TypeSafe Jev](https://docs.typesafe.ai), a fast decision model, t
 1. Describe the control instead of looking it up: `hyprhand --agent me click --find "the Send button" --in telegram`. `--find` works on `click`, `move`, `type` and `scroll`, and `hyprhand find "…" --in W` only reports the match. Jev chooses among accessibility elements when the window has them, and locates the control on a screenshot otherwise (Electron apps). The result names the target, how it was found (`accessibility` or `vision`), and the confidence.
 2. For a sequence of steps in one window, run `hyprhand --agent me do "<goal>" --in W`. Jev picks one action per step (click an item, type, Enter, Escape, back, scroll, wait), checks after each step whether the goal is met, and returns a report with `status`: `done`, `unsure` (with the alternatives it hesitated between), `no_way_forward`, `stuck`, or `step_limit`. Quoted text in the goal and `--input name=value` are the only text it may type.
 3. Jev classifies; it does not plan. Write the goal as the concrete steps in order, for example `do "Press 1, 0, Multiply, 2, 0, Equals"`, rather than `do "work out 10 times 20"`. When a run stops as `unsure` or `no_way_forward`, read the report, observe yourself, and continue with plain commands or a more specific goal.
-4. Confirm the outcome yourself with `read eN`, `observe`, or a screenshot before you report success. `do --dry-run` shows the first decision without acting.
+4. Verify with Jev instead of reading screenshots: `hyprhand --agent me check "the message was sent" --in W` returns `verdict` `yes`, `no`, or `unsure` with a score in about 0.3 s. Phrase it as one concrete, visible fact. Treat `unsure` as no and look yourself. `do --dry-run` shows the first decision without acting.
+5. Wait with Jev instead of sleeping: `hyprhand --agent me wait-for "the KCalc window shows its buttons" --in kcalc --timeout 20000` polls that check every second, also while the window has not appeared yet, and exits nonzero on timeout.
 
-Jev on screenshots is less certain than on accessibility items (around 0.4–0.5 confidence for a correct hit), so check vision hits with a screenshot before anything that sends or deletes.
+Jev on screenshots is less certain than on accessibility items. Below 0.9 hyprhand zooms in and asks again (`via: "vision, zoomed"`), but hits on small icons can still land a few pixels off, so check vision hits with a screenshot or `check` before anything that sends or deletes.
 
 ## Manual loop
 
@@ -37,6 +38,8 @@ Windows marked `no-a11y` (Electron apps such as Discord, Slack, Vivaldi, WhatsAp
 ```bash
 hyprhand --agent me do "<goal as ordered steps>" [--in W] [--input name=value] [--steps 25] [--min-confidence 0.4] [--dry-run]
 hyprhand --agent me find "<description>" [--in W]
+hyprhand --agent me check "<statement>" [--in W]
+hyprhand --agent me wait-for "<condition>" [--in W] [--timeout 30000] [--interval 1000]
 hyprhand --agent me click|move|type|scroll ... --find "<description>" [--in W]
 hyprhand --agent me observe [--window W] [--interactive] [--annotated [--region x,y,w,h] --out /tmp/ui.png] [--format json]
 hyprhand --agent me click eN|W|x,y [--in W] [--double] [--button right] [--physical] [--stay] [--label "Send"]
