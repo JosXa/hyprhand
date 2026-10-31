@@ -134,27 +134,6 @@ Every command becomes a tool (`do`, `find`, `observe`, `click`, `open_app`, and 
 | `HYPRHAND_RESTORE=0` | Leaves the pointer and focus where real input ended |
 | `HYPRHAND_DEBUG=1` | Prints overlay errors |
 
-## Development
-
-```bash
-npm test
-```
-
-The tests cover the pure parts: screen items, capture math, argument parsing, MCP schemas, and the `do` loop with fake screens and a fake Jev. `lib/` splits into:
-
-| Module | Owns |
-| --- | --- |
-| `commands.js` | Command table, flag types and defaults, `invokeCommand` |
-| `act.js` | Clicks, typing, keys, scrolling, and drags on a resolved target |
-| `autopilot.js` | Jev decisions: `locate`, `check`, `waitFor`, and the `do` loop |
-| `screen.js` | What Jev sees of a window: items in reading order, dialog following |
-| `capture.js` | Screenshots, image preparation for Jev, and mapping answers back to the screen |
-| `observe.js` | Accessibility observations and the per-agent element ids |
-| `input.js` | Real pointer and keyboard input with the lock, hover pause, and focus guard |
-| `agent.js` | Agent name, color, remembered window, and per-agent files |
-
-Python helpers: `a11y.py` reads AT-SPI, `images.py` annotates and prepares screenshots, `overlay.py` draws the cursors.
-
 ## Known limits
 
 - Jev's matches on screenshots are slower than on accessibility items (two requests) and score lower on icons without text, so check a vision hit before anything that sends or deletes.
