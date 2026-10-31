@@ -18,7 +18,7 @@ Two agents share the desktop in the demo, which runs at 1.6× speed. `calc` work
 
 ## Install
 
-hyprhand is [houseplant software](https://www.hannahilea.com/blog/houseplant-programming): it grows on one desktop (CachyOS, Hyprland, three monitors) and gets tended when something there needs it. There are no releases and no package. Clone it, `git pull` when you want the latest, and change whatever your setup needs. Anyone can fork or copy it. I may accept contributions, I may not. Take care of your own seedlings.
+hyprhand is [houseplant software](https://www.hannahilea.com/blog/houseplant-programming): it grows on one desktop (CachyOS, Hyprland, three monitors) and gets tended when something there needs it. I'm sharing it so you, or your agent, can take a cutting and grow your own variation. I can't look after it on your machine, though. Anyone can fork or copy it. I may accept contributions, I may not. Take care of your own seedlings.
 
 ```bash
 git clone https://github.com/JosXa/hyprhand.git ~/hyprhand
