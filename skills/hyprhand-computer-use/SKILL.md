@@ -49,7 +49,7 @@ hyprhand doctor
 
 - `click eN` runs the element's accessibility action (Press, Click, Activate, Toggle for checkboxes). It does not touch the real pointer or focus, so it works on background windows and in parallel. List items, tree items, and tabs use a real click, because their accessibility action only selects.
 - `type --into eN` sets an editable text field's content directly. `--submit` then presses Enter in that window.
-- Everything else (coordinates, `--double`, right clicks, drags, scrolls, keys, typing without an editable element) uses real input. hyprhand serializes it across agents with a lock, then puts the user's pointer and focused window back. Add `--stay` when the next step needs the focus to stay, such as a menu that closes when focus leaves or a click that focuses a composer before `type`.
+- Everything else (coordinates, `--double`, right clicks, drags, scrolls, keys, typing without an editable element) uses real input. hyprhand serializes it across agents with a lock and pauses hover focus (`input:follow_mouse`) while it runs, then puts the user's pointer and focused window back. If keyboard focus still moves, for example because the user clicked elsewhere, `type` and `key` stop with an error before sending more input; observe and retry. Add `--stay` when the next step needs the focus to stay, such as a menu that closes when focus leaves or a click that focuses a composer before `type`.
 - `type` and `key` without a target go to your agent's last used window.
 
 ## Rules
