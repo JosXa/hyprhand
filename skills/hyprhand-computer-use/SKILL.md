@@ -55,7 +55,7 @@ hyprhand --agent me open-app "flatpak run org.kde.kcalc" --wait kcalc
 hyprhand screenshot (--window W [--region x,y,w,h] | --region x,y,w,h) --out /tmp/s.png
 hyprhand windows [--all] | active-window | monitors | workspaces | cursor | keybindings
 hyprhand focus-window W | close-window W | workspace N | move-window-workspace N --target W [--silent]
-hyprhand dispatch <hyprland-dispatcher> [args...]
+hyprhand dispatch 'hl.dsp.window.fullscreen({ mode = "maximized" })'   # any Hyprland Lua dispatcher expression
 hyprhand cursors [list|start|stop|forget]
 hyprhand --agent me record start (--monitor NAME | --window W | --region x,y,w,h) [--out file.mp4]
 hyprhand --agent me record stop

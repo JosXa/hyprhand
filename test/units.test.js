@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { boxToCrop, outputScale, parseBox, zoomAround } from '../lib/capture.js'
 import { helpText, parseCommandLine } from '../lib/cli.js'
 import { commands, normalizeInput } from '../lib/commands.js'
-import { resolveWindow } from '../lib/hypr.js'
+import { dispatcher, resolveWindow } from '../lib/hypr.js'
 import { parseKeyCombo } from '../lib/input.js'
 import { tools } from '../lib/mcp.js'
 import { frontmostSibling, gatherDialogs, screenItems, workWindow } from '../lib/screen.js'
@@ -66,12 +66,17 @@ test('a dialog that opened on another workspace is moved and centered over its a
   const dialog = window({ id: 'w2', address: '0x2', app: 'dotnet', floating: true, workspace: '1', workspaceId: 1, bounds: [10, 10, 400, 500], focusRank: 3 })
   const pip = window({ id: 'w4', address: '0x4', floating: true, pinned: true, workspace: '1', workspaceId: 1 })
   const calls = []
-  assert.equal(gatherDialogs(main, [main, dialog, pip], (...args) => calls.push(args)), true)
+  assert.equal(gatherDialogs(main, [main, dialog, pip], (expression) => calls.push(expression)), true)
   assert.deepEqual(calls, [
-    ['movetoworkspacesilent', '6,address:0x2'],
-    ['movewindowpixel', 'exact 1250 250,address:0x2'],
+    'hl.dsp.window.move({ workspace = "6", follow = false, window = "address:0x2" })',
+    'hl.dsp.window.move({ x = 1250, y = 250, window = "address:0x2" })',
   ])
   assert.equal(frontmostSibling(main, [main, { ...dialog, workspace: '6' }]).id, 'w2')
+})
+
+test('dispatcher serializes arguments as Lua values with escaped strings', () => {
+  assert.equal(dispatcher('exec_cmd', 'say "hi"\\there\n'), 'hl.dsp.exec_cmd("say \\"hi\\"\\\\there\\n")')
+  assert.equal(dispatcher('window.float', { action: 'toggle', window: 'address:0x1' }), 'hl.dsp.window.float({ action = "toggle", window = "address:0x1" })')
 })
 
 test('resolveWindow errors carry the NO_WINDOW code', () => {
