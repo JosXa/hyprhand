@@ -7,9 +7,21 @@ import { dispatcher, resolveWindow } from '../lib/hypr.js'
 import { parseKeyCombo } from '../lib/input.js'
 import { tools } from '../lib/mcp.js'
 import { frontmostSibling, gatherDialogs, screenItems, workWindow } from '../lib/screen.js'
+import { hostHyprlandInstance } from '../lib/session.js'
 
 const window = (overrides) => ({ id: 'w1', address: '0x1', app: 'org.kde.dolphin', title: 'Home', pid: 10, workspace: 4, focusRank: 1, visible: true, floating: false, pinned: false, bounds: [0, 0, 900, 600], ...overrides })
 const element = (overrides) => ({ id: 'e1', role: 'push button', name: 'OK', bounds: [10, 10, 50, 20], interactive: true, states: [], ...overrides })
+
+test('hostHyprlandInstance skips Hyprland sessions nested inside another and prefers the newest host', () => {
+  const parents = { 300: 250, 250: 100, 100: 1, 400: 1 }
+  const parentOf = (pid) => parents[pid] ?? 0
+  const host = { instance: 'host', pid: 100, time: 1 }
+  const nested = { instance: 'nested', pid: 300, time: 3 }
+  assert.equal(hostHyprlandInstance([host, nested], parentOf), host)
+  const relogin = { instance: 'relogin', pid: 400, time: 2 }
+  assert.equal(hostHyprlandInstance([host, nested, relogin], parentOf), relogin)
+  assert.equal(hostHyprlandInstance([], parentOf), null)
+})
 
 test('parseBox accepts x,y,w,h and rejects empty sizes', () => {
   assert.deepEqual(parseBox('1,2,30,40'), [1, 2, 30, 40])

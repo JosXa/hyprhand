@@ -74,6 +74,7 @@ hyprhand doctor
 ## Rules
 
 - Observe before acting and after each meaningful step; do not chain blind actions.
+- To work in the background while the user keeps using the desktop, load the `hyprland-hidden-debugging` skill.
 - Ask before payments, credentials, destructive settings, or sending messages the user did not request.
 - Real input briefly takes over the user's pointer and keyboard. Keep it short, and prefer element ids so most work stays semantic.
 - If an element answers `stale`, observe again.
